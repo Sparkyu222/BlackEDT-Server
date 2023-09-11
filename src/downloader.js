@@ -1,19 +1,15 @@
+import * as fs from 'fs';
 
-async function downloadCalendar() {
-        const request = await fetch('https://emploidutemps.univ-reunion.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=10487&projectId=3&calType=ical&nbWeeks=1&displayConfigId=8')
+export async function downloadCalendar() {
+        const request = await fetch('https://emploidutemps.univ-reunion.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=10487&projectId=3&calType=ical&nbWeeks=1&displayConfigId=8');
         if (request.ok !== true) {   // La requête à échouée
             return false;
-        } 
-        const calendartxt = await request.text()
-
-        console.log(calendartxt);
+        }
+        const rawICS = await request.text();
+        return rawICS;
 }
 
-
-
-const fs = require('fs');
-
-async function downloadCalendarBackup(link, filename) {
+export async function downloadCalendarBackup(link, filename) {
     const request = await fetch(link)
     if (request.ok !== true) {   // La requête à échouée
         return false;
