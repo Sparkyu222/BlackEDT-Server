@@ -1,9 +1,9 @@
-// Parse et retourne le prof et les groupes contenus et l'exam dans la description
+// Parse et retourne le prof les groupes et l'exam dans la description
 export function extractDesc(description) {
     // Objet qui contiendra les éléments retournés par la fonction
     const obj = {
         groups: [],
-        teacher: '',
+        teacher: [],
         exam: null
     };
 
@@ -17,7 +17,7 @@ export function extractDesc(description) {
         if (item.search(/RT\d+/g) !== -1) {
             obj.groups.push(item);
         } else if (item !== '') {
-            obj.teacher = item;
+            obj.teacher.push(item);
         }
     }
     return obj;

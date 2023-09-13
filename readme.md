@@ -18,7 +18,7 @@ To install the requirements for BlackEDT-Server, follow these steps:
 
 ## Usage
 
-To use BlackEDT-Server, simply navigate to the URL where the server is hosted. You will be prompted to create a new project or join an existing one. Once you have joined a project, you can start collaborating with your team members in real-time.
+TO-DO
 
 ## License
 
