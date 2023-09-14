@@ -16,6 +16,89 @@ var objReponse = {
     content: null
 }
 
+var directory2 = {
+    name: "Calendrier",
+    type: "folder",
+    content: [
+        {
+            name: "RT1",
+            type: "folder",
+            content: [
+                {
+                    name: "TD1",
+                    type: "folder",
+                    content: [
+                        {
+                            name: "TP1",
+                            type: "file",
+                            uid: 4096
+                        },
+                        {
+                            name: "TP2",
+                            type: "file",
+                            uid: 4095
+                        }
+                    ]
+                },
+                {
+                    name: "TD2",
+                    type: "folder",
+                    content: [
+                        {
+                            name: "TP3",
+                            type: "file",
+                            uid: 4097
+                        },
+                        {
+                            name: "TP4",
+                            type: "file",
+                            uid: 4099
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            name: "RT2",
+            type: "folder",
+            content: [
+                {
+                    name: "TD1",
+                    type: "folder",
+                    content: [
+                        {
+                            name: "TP1",
+                            type: "file",
+                            uid: 4093
+                        },
+                        {
+                            name: "TP2",
+                            type: "file",
+                            uid: 4032
+                        }
+                    ]
+                },
+                {
+                    name: "TD2",
+                    type: "folder",
+                    content: [
+                        {
+                            name: "TP3",
+                            type: "file",
+                            uid: 40432
+                        },
+                        {
+                            name: "TP4",
+                            type: "file",
+                            uid: 4012
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
+
 // Initiation des fonctions d'écoute de sockets
 wss.on('connection', (ws) => {  
     console.log(chalk.yellow(`Un client s'est connecté`));
@@ -26,7 +109,7 @@ wss.on('connection', (ws) => {
     });
 
     (async () => {
-        const icsFile = await downloadCalendar();
+        /*const icsFile = await downloadCalendar();
         const parsedICS = ical.sync.parseICS(icsFile);
     
         var obj = {};
@@ -43,13 +126,13 @@ wss.on('connection', (ws) => {
                 groups: description.groups,
                 exam: description.exam
             }
-        }
+        }*/
 
         var sendObj = objReponse;
 
-        sendObj.tyoe = "calendar";
+        sendObj.type = "directory";
         sendObj.error = false;
-        sendObj.content = obj;
+        sendObj.content = directory2;
 
         ws.send(JSON.stringify(sendObj));
 
