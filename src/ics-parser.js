@@ -1,5 +1,5 @@
 // Parse et retourne le prof les groupes et l'exam dans la description
-export function extractDesc(description) {
+function extractDesc(description) {
     // Objet qui contiendra les éléments retournés par la fonction
     const obj = {
         groups: [],
@@ -22,6 +22,27 @@ export function extractDesc(description) {
     }
     return obj;
 
+}
+
+// Permet de convertir le contenu orginal de l'évênement et de le simplifier pour le client dans un tableau contenant des objets
+export function makeCalendarArray(parsedICS) {
+    var eventArray = [];
+    
+    for (const event of Object.keys(parsedICS)) {
+        if ((event) === 'vcalendar') continue;
+        let description = extractDesc(parsedICS[event].description);
+        eventArray.push({
+            subject: parsedICS[event].summary,
+            location: parsedICS[event].location,
+            start_time: parsedICS[event].start,
+            duration: parsedICS[event].end.getHours() - parsedICS[event].start.getHours(),
+            teacher: description.teacher,
+            groups: description.groups,
+            exam: description.exam
+        });
+    }
+
+    return eventArray;
 }
 
 /*
