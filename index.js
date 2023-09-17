@@ -2,10 +2,10 @@ import { WebSocketServer } from 'ws';                               // Pour les 
 import chalk from 'chalk';                                          // Pour print en couleur dans la console
 import ical from 'node-ical';                                       // Pour parser les fichiers ICS/iCAL
 import { downloadCalendar } from './src/downloader.js';             // Fonctions pour télécharger le calendrier
-import { makeCalendarArray } from './src/ics-parser.js';                      // Fonctions pour parser des éléments dans un évênement
+import { makeCalendarArray } from './src/ics-parser.js';            // Fonctions pour parser des éléments dans un évênement
 import * as chokidar from 'chokidar';                               // Librairie pour watch un dossier et ses sous-dossiers
-import { sleep } from './src/utils.js';
-import{ makePath } from './src/path-parser.js'; 
+import { sleep } from './src/utils.js';                             // Fonctions utiles
+import{ makePath } from './src/path-parser.js';                     // Fonctions pour la création du path
 
 // On démarre le WebSocket sur le port 8080
 const wss = new WebSocketServer({ port: 8080 });
@@ -18,7 +18,7 @@ var objReponse = {
 }
 
 var watchedPath = chokidar.watch('./data/').on('all', (event, path) => {
-    
+
 });
 
 // Initiation des fonctions d'écoute de sockets
@@ -27,7 +27,7 @@ wss.on('connection', (ws) => {
 
     // Quand le Websocket reçoit un message
     ws.on('message', async (msg) => {
-        console.log(msg);
+        
     });
 
     /*
@@ -58,12 +58,13 @@ wss.on('connection', (ws) => {
         sendObj.content = path;
 
         ws.send(JSON.stringify(sendObj));
-
-        console.log(JSON.stringify(path));
+        console.log(`Message envoyé!`)
     })();
-
 });
 
-
+(async () => {
+    await sleep(2000);
+    console.log(watchedPath.getWatched());
+})();
 
 console.log('Le serveur a été initialisé');
