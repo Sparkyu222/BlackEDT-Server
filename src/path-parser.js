@@ -1,5 +1,4 @@
 import paparse from 'papaparse';
-import fs from 'fs';
 
 /**
  * Permet de prendre les fichiers contenue dans le path et de les convertir en objets
