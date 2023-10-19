@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 /**
  * Fontion sleep, besoin de la directive "await" pour fonctionner
  * @param {*} ms
@@ -18,6 +19,15 @@ export function makeErrorResponse(sendObj, ErrorString) {
         why: ErrorString
     };
 
-    console.error(chalk.red(`Error: `) + chalk.orange(ErrorString));
+    console.error(chalk.red(`Error: `) + chalk.yellow(ErrorString));
     return sendObj;
+}
+
+/**
+ * Duplique un objet pour éviter de modfier l'objet originel
+ * @param {Object} obj
+ * @returns {Object}
+ */
+export function duplicateObject(obj) {
+    return JSON.parse(JSON.stringify(obj));
 }
