@@ -120,6 +120,9 @@ wss.on('connection', (ws) => {
         // Switch case pour voir le type de la requête
         switch (request.type) {
             case 'calendar':
+
+                var backupUsed = false;
+
                 // On essaie de télécharger le calendrier actuel
                 try {
                     const icsFile = await downloadCalendar(request.content.resource);           // On télécharge le fichier iCAL/ICS
@@ -146,12 +149,17 @@ wss.on('connection', (ws) => {
                         return;
                     }
                     
+                    backupUsed = true;
+
                 }
 
                 // On construit l'objet de réponse
                 sendObj.type = "calendar";
                 sendObj.error = false;
-                sendObj.content = events;
+                sendObj.content.events = events;
+
+                // Si on a utilisé la backup du calendrier, l'indiquer au client
+                backupUsed ? sendObj.content.backup = true : sendObj.content.backup = false; 
 
                 console.log(JSON.stringify(sendObj) + ' ' + request.content.resource);
 
