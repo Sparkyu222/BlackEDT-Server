@@ -1,32 +1,47 @@
-import { WebSocketServer } from 'ws';                                           // Pour les WebSockets
-import chalk from 'chalk';                                                      // Pour print en couleur dans la console
-import ical from 'node-ical';                                                   // Pour parser les fichiers ICS/iCAL
-import { downloadCalendar, downloadCalendarBackup, getCalendarBackup  } from './src/downloader.js';                         // Fonctions pour télécharger le calendrier
-import { makeCalendarArray } from './src/ics-parser.js';                        // Fonctions pour parser des éléments dans un évênement
-import * as chokidar from 'chokidar';                                           // Librairie pour watch un dossier et ses sous-dossiers
-import { sleep, makeErrorResponse, duplicateObject } from './src/utils.js';     // Fonctions utiles
-import { makePath } from './src/path-parser.js';                                // Fonctions pour la création du path
-import * as fs from 'fs';                                                       // Pour lire les fichiers (PDF)
-import path from 'path';                                                        // Pour extraire le nom du fichier dans un path donné
+import { WebSocketServer } from 'ws';                                                                               // Pour les WebSockets
+import chalk from 'chalk';                                                                                          // Pour print en couleur dans la console
+import ical from 'node-ical';                                                                                       // Pour parser les fichiers ICS/iCAL
+import { downloadCalendar, getCalendarBackup, initBackupDownloader  } from './src/downloader.js';                   // Fonctions pour télécharger le calendrier
+import { makeCalendarArray } from './src/ics-parser.js';                                                            // Fonctions pour parser des éléments dans un évênement
+import * as chokidar from 'chokidar';                                                                               // Librairie pour watch un dossier et ses sous-dossiers
+import { sleep, makeErrorResponse, duplicateObject } from './src/utils.js';                                         // Fonctions utiles
+import { makePath } from './src/path-parser.js';                                                                    // Fonctions pour la création du path
+import * as fs from 'fs';                                                                                           // Pour lire les fichiers (PDF)
+import path from 'path';                                                                                            // Pour extraire le nom du fichier dans un path donné
 
-// On démarre le WebSocket sur le port 8080
-const wss = new WebSocketServer({ port: 8080 });
+/// 
+/// Variables globales de configurations
+///
 
-// Variable pour faire attendre l'annonce du chokidar - permet de lui laisse le temps de découvrir le fichier?
-var chokidarReady = false;
+global.backupTimeout = 259200000                                                                                    // Temps en micro-secondes avant d'initier le retéléchargement des backups de calendrier (défaut: 3 jours)
+var dataPathFolder = './data/';                                                                                     // Dossier où l'on va stocker l'arborescence du menu des ressources
+var serverPort = 8080                                                                                               // Port où va écouter le WebSocket
 
-// Variable pour stocker le path actuel
-var cachePath = null;
+///
+/// Initiation du WebSocket
+///
 
-// Objet de réponse
-var objReponse = {
+const wss = new WebSocketServer({ port: serverPort });
+
+///
+/// Variables de fonctionnement
+///
+
+var chokidarReady = false;                                                                                          // Variable pour faire attendre l'annonce du chokidar - permet de lui laisse le temps de découvrir les fichiers
+global.resources = [];                                                                                              // Tableau pour stocker les ressources à télécharger pour la backup
+
+var objReponse = {                                                                                                  // Objet de réponse - à cloner pour éviter le changement de l'objet original
     type: "",
     error: null,
     content: null
 }
 
+///
+/// Chokidar - Écoute les fichiers ajoutés/supprimés/modifiés et annonce au client un PATH utilisé pour sélectionner la ressource désirée
+///
+
 // On écoute les changements effectués dans le dossier "data"
-var watchedPath = chokidar.watch('./data/').on('all', async (event, target_path) => {
+var watchedPath = chokidar.watch(dataPathFolder).on('all', async (event, target_path) => {
 
     var sendObj = duplicateObject(objReponse);
 
@@ -39,7 +54,7 @@ var watchedPath = chokidar.watch('./data/').on('all', async (event, target_path)
     }
 
     // On met le path dans le cache pour les clients qui se connectent pour la première fois au serveur
-    cachePath = path;
+    global.cachePath = path;
     if (chokidarReady === false) return;
 
     // On créé l'objet de réponse
@@ -54,7 +69,10 @@ var watchedPath = chokidar.watch('./data/').on('all', async (event, target_path)
     console.log(`Modification du PATH détecté (${event}  - "${target_path}"), broadcast du nouveau PATH effectué au clients.`);
 });
 
-// On écoute si un client se connecte
+///
+/// Écouter la requête des clients
+///
+
 wss.on('connection', (ws) => {
     console.log(chalk.yellow(`Client connecté.`));
 
@@ -66,7 +84,7 @@ wss.on('connection', (ws) => {
         let sendObj = duplicateObject(objReponse);
         sendObj.type = "directory";
         sendObj.error = false;
-        sendObj.content = cachePath;
+        sendObj.content = global.cachePath;
 
         ws.send(JSON.stringify(sendObj));
     })();
@@ -87,14 +105,14 @@ wss.on('connection', (ws) => {
 
         // Si dans la requête il n'y a pas la mention du type
         if (typeof request.type === 'undefined') {
-            let errObj = makeErrorResponse(duplicateObject(objReponse), 'Empty or non-existant ressource object field');
+            let errObj = makeErrorResponse(duplicateObject(objReponse), 'Empty or non-existant resource object field');
             ws.send(JSON.stringify(errObj));
             return;
         }
 
         // Si dans la requête il n'y a pas la mention de la ressource
         if (typeof request.content === 'undefined' || typeof request.content.resource === 'undefined') {
-            let errObj = makeErrorResponse(duplicateObject(objReponse), 'Empty or non-existant ressource object field');
+            let errObj = makeErrorResponse(duplicateObject(objReponse), 'Empty or non-existant resource object field');
             ws.send(JSON.stringify(errObj));
             return;
         }
@@ -106,17 +124,28 @@ wss.on('connection', (ws) => {
                 try {
                     const icsFile = await downloadCalendar(request.content.resource);           // On télécharge le fichier iCAL/ICS
                     if (icsFile === false) throw new Error();                                   // Si le téléchargeur a return false, il y a eu un problème dans le téléchargement
-                    const parsedICS = ical.sync.parseICS(icsFile);                              // On passe le fichier dans le parser
+                    var parsedICS = ical.sync.parseICS(icsFile);                                // On passe le fichier dans le parser
                     var events = makeCalendarArray(parsedICS);                                  // On simplifie la sortie du parser pour le client
                 } catch (e) {
                     // Si le téléchargement a échoué, on essaie de trouver une backup locale
                     console.log('Erreur lors du téléchargement. ' + request.content.resource);
                     const backupICS = getCalendarBackup(request.content.resource);
                     if (backupICS === false) {
-                        let errObj = makeErrorResponse(duplicateObject(objReponse, `Couldn't download and get backup calendar.`));
+                        let errObj = makeErrorResponse(duplicateObject(objReponse, `Couldn't download and get backup calendar (id: ${request.content.resource}).`));
                         ws.send(errObj);
                         return;
                     }
+                    
+                    // On tente parser les données de la backup
+                    try {
+                        const parsedBackupICS = ical.sync.parseICS(backupICS);
+                        var events = makeCalendarArray(parsedBackupICS);
+                    } catch (e) {
+                        let errObj = makeErrorResponse(duplicateObject(objReponse, `Couldn't parse backup calendar (id: ${request.content.resource}).`));
+                        ws.send(errObj);
+                        return;
+                    }
+                    
                 }
 
                 // On construit l'objet de réponse
@@ -171,6 +200,12 @@ wss.on('connection', (ws) => {
     await sleep(10000);
     chokidarReady = true;
     console.log(`Chokidar peux désormais broadcast.`);
+})();
+
+// Initier la backup de calendrier
+(async () => {
+    await sleep(15000);
+    initBackupDownloader();
 })();
 
 console.log('Le serveur a été initialisé');

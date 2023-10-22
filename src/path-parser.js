@@ -29,6 +29,18 @@ function includeFiles (files, path) {                                           
                         tts: line[2]                                                                                    // Clé qui contient le texte à dire à voix haute (tts)
                     }
                     
+
+                    let alreadyExists = false;
+                    for (const id of global.resources) {                                                                // On stocke la ressource pour la fonction de backup de calendriers
+                        if (id === line[1]) {
+                            alreadyExists = true;
+                            break;
+                        }
+                    }
+
+                    if (alreadyExists !== true) global.resources.push(line[1]);
+
+
                     items.push(obj);                                                                                    // On push l'objet parmis les autres items
                 }
 

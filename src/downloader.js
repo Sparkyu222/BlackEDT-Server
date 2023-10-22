@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import chalk from 'chalk';
+import { sleep } from './utils.js'
 
 // Fonction pour télécharger le calendrier (2 semaines) - À TERMINER
 /**
@@ -39,6 +40,11 @@ export async function downloadCalendarBackup(resource) {
     }
 }
 
+/**
+ * Fonction pour récupérer le calendrier backup
+ * @param {int} resource
+ * @returns {string}
+ */
 export function getCalendarBackup(resource) {
     try {
         var file = fs.readFileSync(`./cache/${resource}.ics`);
@@ -48,4 +54,22 @@ export function getCalendarBackup(resource) {
     }
 
     return file;
+}
+
+/**
+ * Fonction qui initie le téléchargement de la backup du calendrier
+ */
+export async function initBackupDownloader() {
+    console.log(`initBackupDownloader: Initiation de la backup de calendrier...`);
+    for (const resource of global.resources) {
+        if (await downloadCalendarBackup(resource) === false) {
+            console.error(chalk.red(`initBackupDownloader: Couldn't download backup of resource ${resource}`));
+        }
+        console.log(`initBackupDownloader: Téléchargement de la backup de "${resource}" terminée avec succès."`);
+        await sleep(5000);
+    }
+
+    console.log(`initBackupDownloader: Fin de tâche.`);
+    await sleep(global.backupTimeout);
+    initBackupDownloader();
 }
