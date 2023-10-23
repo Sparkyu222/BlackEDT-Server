@@ -9,7 +9,7 @@ import { makePath } from './src/path-parser.js';                                
 import * as fs from 'fs';                                                                                           // Pour lire les fichiers (PDF)
 import path from 'path';                                                                                            // Pour extraire le nom du fichier dans un path donné
 
-/// 
+///
 /// Variables globales de configurations
 ///
 
@@ -66,7 +66,7 @@ var watchedPath = chokidar.watch(dataPathFolder).on('all', async (event, target_
     wss.clients.forEach((ws) => {
         ws.send(sendObj);
     })
-    console.log(`Modification du PATH détecté (${event}  - "${target_path}"), broadcast du nouveau PATH effectué au clients.`);
+    console.log(`Modification du PATH détecté (${event} - "${target_path}"), broadcast du nouveau PATH effectué au clients.`);
 });
 
 ///
@@ -117,6 +117,8 @@ wss.on('connection', (ws) => {
             return;
         }
 
+         console.log(chalk.greenBright(`User request: ${JSON.stringify(request)}`));
+
         // Switch case pour voir le type de la requête
         switch (request.type) {
             case 'calendar':
@@ -131,7 +133,7 @@ wss.on('connection', (ws) => {
                     var events = makeCalendarArray(parsedICS);                                  // On simplifie la sortie du parser pour le client
                 } catch (e) {
                     // Si le téléchargement a échoué, on essaie de trouver une backup locale
-                    console.log('Erreur lors du téléchargement. ' + request.content.resource);
+                    console.log('Erreur lors du téléchargement de ' + request.content.resource);
                     const backupICS = getCalendarBackup(request.content.resource);
                     if (backupICS === false) {
                         let errObj = makeErrorResponse(duplicateObject(objReponse, `Couldn't download and get backup calendar (id: ${request.content.resource}).`));
@@ -156,12 +158,10 @@ wss.on('connection', (ws) => {
                 // On construit l'objet de réponse
                 sendObj.type = "calendar";
                 sendObj.error = false;
-                sendObj.content.events = events;
+                sendObj.content = { events };
 
                 // Si on a utilisé la backup du calendrier, l'indiquer au client
                 backupUsed ? sendObj.content.backup = true : sendObj.content.backup = false; 
-
-                console.log(JSON.stringify(sendObj) + ' ' + request.content.resource);
 
                 // On envoie la réponse au client
                 ws.send(JSON.stringify(sendObj));
@@ -170,15 +170,15 @@ wss.on('connection', (ws) => {
             case 'pdf':
                 // On essaie de lire le fichier PDF
                 try {
-                    var file = fs.readSync(request.content.resource)
+                    var file = fs.readFileSync(request.content.resource);
                 } catch (e) {
-                    let errObj = makeErrorResponse(duplicateObject(objReponse), `PDF file does not exists or can't be read`);
+                    let errObj = makeErrorResponse(duplicateObject(objReponse), `PDF file does not exists or can't be read : ${e}`);
                     ws.send(JSON.stringify(errObj));
                     return;
                 }
 
                 // On encode le fichier dans un string en Base64
-                var encodedPdf = btoa(file);
+                var encodedPdf = Buffer.from(file).toString('base64');
 
                 // On construit l'objet de réponse
                 sendObj.type = "pdf";
