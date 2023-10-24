@@ -18,7 +18,9 @@ To install the requirements for BlackEDT-Server, follow these steps:
 
 ## Usage
 
-TO-DO
+You can launch the server via `npm start` or `node .`.
+
+You can also set the listening port of the WebSocket in `index.js`.
 
 ## License
 
