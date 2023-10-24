@@ -134,7 +134,7 @@ dist
 cache/*
 !cache/.gitkeep
 
-data/*
-!data/.gitkeep
+#data/*
+#!data/.gitkeep
 
 .DS_Store

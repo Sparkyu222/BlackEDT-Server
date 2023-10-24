@@ -64,7 +64,7 @@ var watchedPath = chokidar.watch(dataPathFolder).on('all', async (event, target_
 
     // On broadcast à tous les clients le path modifié
     wss.clients.forEach((ws) => {
-        ws.send(sendObj);
+        ws.send(JSON.stringify(sendObj));
     })
     console.log(`Modification du PATH détecté (${event} - "${target_path}"), broadcast du nouveau PATH effectué au clients.`);
 });
@@ -117,8 +117,6 @@ wss.on('connection', (ws) => {
             return;
         }
 
-         console.log(chalk.greenBright(`User request: ${JSON.stringify(request)}`));
-
         // Switch case pour voir le type de la requête
         switch (request.type) {
             case 'calendar':
@@ -161,7 +159,7 @@ wss.on('connection', (ws) => {
                 sendObj.content = { events };
 
                 // Si on a utilisé la backup du calendrier, l'indiquer au client
-                backupUsed ? sendObj.content.backup = true : sendObj.content.backup = false; 
+                backupUsed ? sendObj.content.backup = true : sendObj.content.backup = false;
 
                 // On envoie la réponse au client
                 ws.send(JSON.stringify(sendObj));
