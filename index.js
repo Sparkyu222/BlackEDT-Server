@@ -165,6 +165,36 @@ wss.on('connection', (ws) => {
                 ws.send(JSON.stringify(sendObj));
                 break;
 
+            case 'localCalendar':
+                try {
+                    var file = fs.readFileSync(request.content.resource);
+                } catch (e) {
+                    let errObj = makeErrorResponse(duplicateObject(objReponse), `Local calendar find can't be read: ${e}`);
+                    ws.send(JSON.stringify(errObj));
+                    return;
+                }
+
+                try {
+                    var parsedICS = ical.sync.parseICS(file);                                   // On passe le fichier dans le parser
+                    var events = makeCalendarArray(parsedICS);                                  // On simplifie la sortie du parser pour le client
+                } catch (e) {
+                    let errObj = makeErrorResponse(duplicateObject(objReponse), `Can't parse local calendar file: ${e}`);
+                    ws.send(JSON.stringify(errObj));
+                    return;
+                }
+
+                // On construit l'objet de réponse
+                sendObj.type = "localCalendar";
+                sendObj.error = false;
+                sendObj.content = { events };
+
+                // Pas de backup utilisée
+                sendObj.content.backup = false;
+
+                // On envoie la réponse au client
+                ws.send(JSON.stringify(sendObj));
+                break;
+
             case 'pdf':
                 // On essaie de lire le fichier PDF
                 try {

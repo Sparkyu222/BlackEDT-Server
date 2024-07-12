@@ -41,18 +41,29 @@ function includeFiles (files, path) {                                           
                     if (alreadyExists !== true) global.resources.push(line[1]);
 
 
-                    items.push(obj);                                                                                    // On push l'objet parmis les autres items
+                    items.push(obj);                                                                                // On push l'objet parmis les autres items
                 }
 
                 break;
-            case 'pdf':                                                                                                 // Si le fichier est un PDF
-                    let obj = {                                                                                         // On créé l'objet qui contiendra le nom du pdf ainsi le path complet vers celui-ci
-                        name: file.slice(0, file.length-4),                                                             // Nom du PDF
-                        type: "pdf",                                                                                    // Type PDF
-                        resource: hostPath                                                                              // Dans le champs "resource" on met le chemin absolue vers le PDF
-                    }
 
-                    items.push(obj);                                                                                    // On push l'objet parmis les autres items
+            case 'ics':
+                let objLocalCalendar = {                                                                                         // On créé l'objet qui contiendra le nom du pdf ainsi le path complet vers celui-ci
+                    name: file.slice(0, file.length-4),                                                             // Nom du fichier ICS
+                    type: "localCalendar",                                                                          // Type localCalendar
+                    resource: hostPath                                                                              // Dans le champs "resource" on met le chemin absolue vers le ICS
+                }
+
+                items.push(objLocalCalendar);                                                                                    // On push l'objet parmis les autres items
+                break;
+
+            case 'pdf':                                                                                                 // Si le fichier est un PDF
+                let objPdf = {                                                                                         // On créé l'objet qui contiendra le nom du pdf ainsi le path complet vers celui-ci
+                    name: file.slice(0, file.length-4),                                                             // Nom du PDF
+                    type: "pdf",                                                                                    // Type PDF
+                    resource: hostPath                                                                              // Dans le champs "resource" on met le chemin absolue vers le PDF
+                }
+
+                items.push(objPdf);                                                                                    // On push l'objet parmis les autres items
 
                 break;
             
@@ -82,7 +93,7 @@ export function makePath(watcherPath) {                                         
     for (const actualPath of directoryTreeKeys) {                                                                       // On boucle sur chaque path
         
         let everyFiles = directoryTree[actualPath];                                                                     // On prends les fichiers du path actuel
-        let files = everyFiles.filter(file => file.match(/(\.csv|\.pdf)/));                                             // On garde seulement les fichiers finissant par ".csv" et ".pdf"
+        let files = everyFiles.filter(file => file.match(/(\.csv|\.pdf|\.ics)/));                                             // On garde seulement les fichiers finissant par ".csv" et ".pdf"
 
         let splitArray = actualPath.split('/');                                                                         // On éclate le string par les "/" : "/home/user/project/data/calendar/RT1" ==> ['home', 'user', 'project', 'data', 'calendar', 'RT1']
         let arrayPath = splitArray.splice(splitArray.indexOf('data')+1, splitArray.length);                             // On garde seulement les éléments après 'data' : ['home', 'user', 'project', 'data', 'calendar', 'RT1'] ==> ['calendar', 'RT1']
